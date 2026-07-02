@@ -3,6 +3,14 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="BrandDrop Prototype", page_icon="✨", layout="wide")
 
+# --- SESSION STATE FOR NAVIGATION ---
+# This allows buttons outside the menu (like Notifications) to change the page
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "✨ Discover"
+
+def change_page(page_name):
+    st.session_state.current_page = page_name
+
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
@@ -14,11 +22,13 @@ st.markdown("""
     .stButton>button { background-color: #C5837C; color: white; border-radius: 20px; border: none; font-weight: bold; transition: all 0.3s ease; width: 100%;}
     .stButton>button:hover { background-color: #a86c66; transform: scale(1.02); }
     
-    /* Passport Progress Cards (Matching Pic 3) */
-    .stamp-card {
-        background: linear-gradient(135deg, #2a1b3d 0%, #4a1942 100%);
-        border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #C5837C;
-    }
+    /* Profile Stats */
+    .stat-square { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 20px 10px; text-align: center; margin-bottom: 15px;}
+    .stat-square h2 { color: #fff !important; font-size: 28px; margin: 10px 0; font-family: 'Arial', sans-serif;}
+    .stat-square p { color: #888; font-size: 12px; margin: 0; font-weight: bold;}
+    
+    /* Passport Progress Cards */
+    .stamp-card { background: linear-gradient(135deg, #2a1b3d 0%, #4a1942 100%); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #C5837C; }
     .stamp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .stamp-title { background: #5c3c92; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; color: white; }
     .stamp-status { font-size: 12px; color: #ffb7b2; font-weight: bold; }
@@ -26,25 +36,39 @@ st.markdown("""
     .progress-fill { background: #d32f2f; height: 100%; border-radius: 4px; }
     .progress-text { font-size: 11px; color: #ccc; }
     
-    /* Achievements (Matching Pic 4) */
-    .achieve-unlocked {
-        background: linear-gradient(90deg, #ff4081 0%, #f50057 100%);
-        border-radius: 10px; padding: 15px; margin-bottom: 10px; color: white; display: flex; justify-content: space-between;
+    /* Reward Box Styling */
+    .reward-gold {
+        background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7);
+        color: #111; padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3); font-weight: 900;
+        display: flex; justify-content: space-between; align-items: center;
     }
-    .achieve-locked {
-        background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 10px; color: #888; display: flex; justify-content: space-between;
+    .reward-locked {
+        background: repeating-linear-gradient(45deg, #1a1a1a, #1a1a1a 10px, #222 10px, #222 20px);
+        color: #666; padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        border: 2px solid #333; position: relative; overflow: hidden;
     }
+    .reward-locked::after {
+        content: '⛓️ 🔒 ⛓️'; position: absolute; right: 20px; top: 50%;
+        transform: translateY(-50%); font-size: 24px; letter-spacing: 5px; opacity: 0.7;
+    }
+    
+    /* About Page Specifics */
+    .about-card { background-color: #fce4ec; border-radius: 15px; padding: 20px; margin-bottom: 20px; color: #333; }
+    .about-card h3 { color: #d81b60 !important; margin-top: 0;}
+    .team-card { background-color: white; border-radius: 15px; padding: 20px; color: #333;}
+    .team-card h3 { color: #1a237e !important; }
+    .team-member { background-color: #3949ab; color: white; padding: 5px 15px; border-radius: 5px; margin-bottom: 8px; display: inline-block; width: 100%; font-weight: bold; }
     
     /* Footer */
     .brand-footer { background-color: #1e1e1e; padding: 30px 20px; text-align: center; border-radius: 15px; margin-top: 50px; border-top: 2px solid #333;}
     .brand-footer h2 { margin: 0; font-family: 'Helvetica', sans-serif; font-size: 28px; color: white !important;}
-    .brand-footer .drop-text { color: #E91E63; font-weight: 900;} /* Pink Drop */
+    .brand-footer .drop-text { color: #E91E63; font-weight: 900;}
     .brand-footer .tagline { color: #aaa; font-size: 15px; margin: 10px 0;}
     .brand-footer .copyright { color: #666; font-size: 12px; margin: 0;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER: FOOTER ---
 def render_footer():
     st.markdown("""
         <div class="brand-footer">
@@ -61,42 +85,52 @@ except:
     st.sidebar.title("BrandDrop.")
 st.sidebar.caption("📍 Dubai, UAE")
 
-page = st.sidebar.radio("Navigation", [
-    "✨ Discover", 
-    "👤 My Profile", 
-    "🤝 Consumer Clubs",
-    "⭐ Passport & Rewards", 
-    "💬 Testimonials",
-    "📖 About BrandDrop"
-])
+# Interactive Page Routing
+pages = ["✨ Discover", "👤 My Profile", "🤝 Consumer Clubs", "⭐ Passport & Rewards", "💬 Testimonials", "📖 About BrandDrop", "🔔 Notifications"]
+page = st.sidebar.radio("Navigation", pages, index=pages.index(st.session_state.current_page))
+
+# Update state if radio changes
+if page != st.session_state.current_page:
+    st.session_state.current_page = page
+    st.rerun()
 
 st.sidebar.divider()
-st.sidebar.button("🔔 3 New Notifications", key="side_notif", type="primary")
+if st.sidebar.button("🔔 3 New Notifications", type="primary"):
+    change_page("🔔 Notifications")
+    st.rerun()
+    
 st.sidebar.markdown("<div style='text-align:center; color:#888; font-size:12px; margin-top:20px;'>📱 v2.0.0<br>🇦🇪 Made in UAE</div>", unsafe_allow_html=True)
-
 
 # ==========================================
 # PAGE 1: DISCOVER 
 # ==========================================
-if page == "✨ Discover":
+if st.session_state.current_page == "✨ Discover":
     st.title("Discover Experiences")
     st.write("Browse real-world brand activations across the UAE.")
     
     events = [
-        ("Charlotte Tilbury Oasis", "Burj Park", "💄 Beauty"), ("Nike Air Max Drop", "D3", "👟 Fashion"), 
-        ("Nespresso Tasting", "City Walk", "☕ F&B"), ("Dior Mystery Gift", "MOE", "👗 Luxury"),
-        ("Apple Vision Pro Demo", "Dubai Mall", "💻 Tech"), ("Porsche Track Day", "Autodrome", "🏎️ Auto"),
-        ("Banaras Artisanal Showcase", "Alserkal", "🧵 Heritage"), ("Packaged Foods Expo", "WTC", "🍱 F&B"),
-        ("Chanel Pop-up", "Kite Beach", "💎 Luxury"), ("Sephora VIP Night", "Dubai Mall", "💄 Beauty"),
-        ("Supply Chain Automation Demo", "DIFC", "⚙️ B2B/Tech"), ("Red Bull Gaming", "JBR", "🎮 Gaming"),
-        ("Adidas Run Club", "Marina", "🏃 Fitness"), ("Samsung Galaxy Launch", "Bluewaters", "📱 Tech"),
-        ("Lego Family Build", "Festival City", "🧸 Family")
+        ("Charlotte Tilbury Oasis", "Burj Park", "💄 Beauty", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=80"), 
+        ("Nike Air Max Drop", "D3", "👟 Fashion", "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=500&q=80"), 
+        ("Nespresso Tasting", "City Walk", "☕ F&B", "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=500&q=80"), 
+        ("Dior Mystery Gift", "MOE", "👗 Luxury", "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=500&q=80"),
+        ("Apple Vision Pro Demo", "Dubai Mall", "💻 Tech", "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"), 
+        ("Porsche Track Day", "Autodrome", "🏎️ Auto", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=500&q=80"),
+        ("Banaras Artisanal Showcase", "Alserkal", "🧵 Heritage", "https://images.unsplash.com/photo-1605814518731-863a35f29910?w=500&q=80"), 
+        ("Packaged Foods Expo", "WTC", "🍱 F&B", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"),
+        ("Chanel Pop-up", "Kite Beach", "💎 Luxury", "https://images.unsplash.com/photo-1555529771-835f59fc5efe?w=500&q=80"), 
+        ("Sephora VIP Night", "Dubai Mall", "💄 Beauty", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&q=80"),
+        ("Supply Chain Expo", "DIFC", "⚙️ B2B/Tech", "https://images.unsplash.com/photo-1586528116311-ad8ed7c663c0?w=500&q=80"), 
+        ("Red Bull Gaming", "JBR", "🎮 Gaming", "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=500&q=80"),
+        ("Adidas Run Club", "Marina", "🏃 Fitness", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&q=80"), 
+        ("Samsung Galaxy Launch", "Bluewaters", "📱 Tech", "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&q=80"),
+        ("Lego Family Build", "Festival City", "🧸 Family", "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500&q=80")
     ]
     
     col1, col2, col3 = st.columns(3)
-    for i, (name, loc, tag) in enumerate(events):
+    for i, (name, loc, tag, img) in enumerate(events):
         with [col1, col2, col3][i % 3]:
             with st.container(border=True):
+                st.image(img, use_container_width=True)
                 st.markdown(f"**{name}**")
                 st.caption(f"📍 {loc} | {tag}")
                 st.button("Reserve", key=f"evt_{i}")
@@ -106,40 +140,72 @@ if page == "✨ Discover":
 # ==========================================
 # PAGE 2: USER PROFILE
 # ==========================================
-elif page == "👤 My Profile":
+elif st.session_state.current_page == "👤 My Profile":
     st.title("My Profile")
-    st.button("🔔 You have 3 pending reward claims! Click to view.", type="primary", use_container_width=True)
+    
+    if st.button("🔔 You have 3 pending reward claims! Click to view.", type="primary", use_container_width=True):
+        change_page("🔔 Notifications")
+        st.rerun()
+        
     st.write("")
     
     c1, c2 = st.columns([1, 3])
     with c1:
-         st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha", width=150)
+         st.image("https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80", width=150)
     with c2:
         st.subheader("Aisha Al Mansoori")
         st.write("🌟 **Status:** Gold Member")
         st.write("📞 +971 50 123 4567 | 📧 aisha.m@branddrop.ae")
-        st.button("⚙️ Account Settings")
-        st.button("🚪 Sign Out")
+        
+        b1, b2, b3 = st.columns(3)
+        b1.button("⚙️ Settings")
+        b2.button("🖼️ Change Pic")
+        b3.button("🚪 Sign Out")
+
+    st.write("")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown('<div class="stat-square"><div>🎯</div><h2>3</h2><p>Experiences Attended</p></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="stat-square"><div>🏆</div><h2>1250</h2><p>Total Points Earned</p></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="stat-square"><div>📗</div><h2>1/8</h2><p>Passport Stamps</p></div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="stat-square"><div>🔥</div><h2>8</h2><p>Available Experiences</p></div>', unsafe_allow_html=True)
+
+    with st.expander("Privacy & Account Settings"):
+        st.write("Notifications: **ON**")
+        st.write("Location Services: **ON**")
 
     render_footer()
 
 # ==========================================
 # PAGE 3: CONSUMER CLUBS
 # ==========================================
-elif page == "🤝 Consumer Clubs":
+elif st.session_state.current_page == "🤝 Consumer Clubs":
     st.title("Consumer Clubs")
     st.write("Join 12 exclusive communities tailored to your interests.")
     
     clubs = [
-        "👟 Sneakerhead Hub", "🧘‍♀️ Wellness Collective", "🐾 Pet Lovers", "☕ Coffee Connoisseurs", 
-        "🏎️ Auto Enthusiasts", "🍼 Parents Club", "🎮 Tech & Gaming", "🍣 Foodies Club", 
-        "💎 Luxury Lounge", "💄 Beauty Insiders", "🎨 Art & Design", "✈️ Travel Explorers"
+        ("👟 Sneakerhead Hub", "https://images.unsplash.com/photo-1552346154-21d32810baa3?w=500&q=80"),
+        ("🧘‍♀️ Wellness Collective", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&q=80"), 
+        ("🐾 Pet Lovers", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&q=80"), 
+        ("☕ Coffee Connoisseurs", "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=500&q=80"), 
+        ("🏎️ Auto Enthusiasts", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=500&q=80"), 
+        ("🍼 Parents Club", "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500&q=80"), 
+        ("🎮 Tech & Gaming", "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"), 
+        ("🍣 Foodies Club", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"), 
+        ("💎 Luxury Lounge", "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=500&q=80"), 
+        ("💄 Beauty Insiders", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=80"), 
+        ("🎨 Art & Design", "https://images.unsplash.com/photo-1513364776144-60967f0f7ffe?w=500&q=80"), 
+        ("✈️ Travel Explorers", "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=80")
     ]
     
     cols = st.columns(3)
-    for i, club in enumerate(clubs):
+    for i, (club_name, img_url) in enumerate(clubs):
         with cols[i % 3]:
-            st.info(club)
+            st.image(img_url, use_container_width=True)
+            st.info(club_name)
             st.button("Join", key=f"club_{i}")
 
     render_footer()
@@ -147,24 +213,22 @@ elif page == "🤝 Consumer Clubs":
 # ==========================================
 # PAGE 4: PASSPORT & REWARDS
 # ==========================================
-elif page == "⭐ Passport & Rewards":
+elif st.session_state.current_page == "⭐ Passport & Rewards":
     st.title("My Experience Passport")
     
-    # Stats row (Matching Pic 2)
     c1, c2, c3 = st.columns(3)
     c1.markdown("<div style='background:#1e1e1e; padding:20px; border-radius:10px; text-align:center;'>📗<h3>3</h3><p style='color:#888;'>Total Experiences</p></div>", unsafe_allow_html=True)
-    c2.markdown("<div style='background:#1e1e1e; padding:20px; border-radius:10px; text-align:center;'>🏆<h3>2/8</h3><p style='color:#888;'>Stamps Unlocked</p></div>", unsafe_allow_html=True)
-    c3.markdown("<div style='background:#1e1e1e; padding:20px; border-radius:10px; text-align:center;'>⭐<h3>450</h3><p style='color:#888;'>Total Points</p></div>", unsafe_allow_html=True)
+    c2.markdown("<div style='background:#1e1e1e; padding:20px; border-radius:10px; text-align:center;'>🏆<h3>1/8</h3><p style='color:#888;'>Stamps Unlocked</p></div>", unsafe_allow_html=True)
+    c3.markdown("<div style='background:#1e1e1e; padding:20px; border-radius:10px; text-align:center;'>⭐<h3>1250</h3><p style='color:#888;'>Total Points</p></div>", unsafe_allow_html=True)
     
     st.divider()
     st.subheader("✨ Your Passport Stamps")
     
-    # Progress bars (Matching Pic 3)
     stamps = [
         ("Coffee Explorer", 7, 10), ("Beauty Insider", 4, 5),
         ("Food Adventurer", 3, 10), ("Tech Enthusiast", 2, 5),
         ("Fitness Fanatic", 1, 5), ("Sneaker Hunter", 3, 3),
-        ("Luxury Seeker", 2, 5), ("Dubai Explorer", 5, 5)
+        ("Luxury Seeker", 2, 5), ("Dubai Explorer", 1, 5)
     ]
     
     col1, col2 = st.columns(2)
@@ -172,7 +236,6 @@ elif page == "⭐ Passport & Rewards":
         pct = int((curr/total)*100)
         status = "✅ Unlocked" if curr == total else f"🔒 {curr}/{total}"
         fill_color = "#4caf50" if curr == total else "#d32f2f"
-        
         html = f"""
         <div class="stamp-card">
             <div class="stamp-header">
@@ -189,21 +252,40 @@ elif page == "⭐ Passport & Rewards":
     st.divider()
     st.subheader("🏆 Reward Catalog")
     
-    # Claimable Rewards
-    st.success("**[CLAIMABLE]** ☕ % Arabica Free Coffee (Cost: 200 pts)")
-    st.success("**[CLAIMABLE]** 🎟️ AED 50 Sephora Voucher (Cost: 400 pts)")
-    
-    # Locked Rewards
-    st.error("**[LOCKED]** 🚢 VIP Yacht Party - Marina (Requires 5,000 pts)")
-    st.error("**[LOCKED]** 👗 Dubai Fashion Week Invite (Requires 3,000 pts)")
-    st.error("**[LOCKED]** 🏎️ Porsche Track Day Pass (Requires 10,000 pts)")
+    st.markdown("""
+        <div class="reward-gold">
+            <div>
+                <h4 style="margin:0; color:#111;">☕ % Arabica Free Coffee</h4>
+                <span style="font-size:14px;">Cost: 200 pts | Status: Claimable</span>
+            </div>
+            <div style="font-size:30px;">✨</div>
+        </div>
+        
+        <div class="reward-gold">
+            <div>
+                <h4 style="margin:0; color:#111;">🎟️ AED 50 Sephora Voucher</h4>
+                <span style="font-size:14px;">Cost: 400 pts | Status: Claimable</span>
+            </div>
+            <div style="font-size:30px;">✨</div>
+        </div>
+        
+        <div class="reward-locked">
+            <h4 style="margin:0; color:#888;">🚢 VIP Yacht Party - Marina</h4>
+            <span style="font-size:14px;">Requires 5,000 pts</span>
+        </div>
+        
+        <div class="reward-locked">
+            <h4 style="margin:0; color:#888;">👗 Dubai Fashion Week Invite</h4>
+            <span style="font-size:14px;">Requires 3,000 pts</span>
+        </div>
+    """, unsafe_allow_html=True)
 
     render_footer()
 
 # ==========================================
 # PAGE 5: TESTIMONIALS
 # ==========================================
-elif page == "💬 Testimonials":
+elif st.session_state.current_page == "💬 Testimonials":
     st.title("Community Voices")
     st.write("See what users and brands are saying about BrandDrop.")
     
@@ -236,7 +318,7 @@ elif page == "💬 Testimonials":
 # ==========================================
 # PAGE 6: ABOUT BRANDDROP
 # ==========================================
-elif page == "📖 About BrandDrop":
+elif st.session_state.current_page == "📖 About BrandDrop":
     st.markdown("""
         <div style="background: linear-gradient(135deg, #1a237e 0%, #C5837C 100%); padding: 30px; border-radius: 15px; margin-bottom: 20px;">
             <h1 style="color: white !important; margin:0;">About Brand<span style="color:#E91E63;">Drop</span></h1>
@@ -246,20 +328,67 @@ elif page == "📖 About BrandDrop":
     """, unsafe_allow_html=True)
     
     c1, c2 = st.columns([1.5, 1])
+    
     with c1:
-        st.subheader("🎯 Our Mission")
-        st.write("Replacing traditional advertising with real-world experiences that create meaningful connections and measurable engagement.")
-        
-        st.subheader("❌ The Problem")
-        st.write("Consumers skip ads. Brands waste money on unmeasurable activations. Experiences are scattered.")
-        
-        st.subheader("✅ Our Solution")
-        st.write("A single platform for discovering experiences, building a digital passport, and driving real-time B2B analytics.")
+        st.markdown("""
+            <div class="about-card">
+                <h3>🎯 Our Mission</h3>
+                <p>BrandDrop is revolutionizing how brands connect with consumers in the UAE. We're replacing traditional advertising with real-world experiences that create meaningful connections and measurable engagement.</p>
+            </div>
+            
+            <h3 style="color:#ff5252 !important;">❌ The Problem We Solve</h3>
+            <ul style="color:#ddd;">
+                <li>Consumers skip ads and ignore influencer promotions</li>
+                <li>Brands waste budget on activations without measuring ROI</li>
+                <li>Exciting brand experiences are scattered across multiple platforms</li>
+                <li>No single platform exists for discovering brand experiences</li>
+            </ul>
+            
+            <h3 style="color:#69f0ae !important;">✅ Our Solution</h3>
+            <ul style="color:#ddd;">
+                <li>Single platform for discovering, booking, and engaging</li>
+                <li>Measurable engagement instead of just impressions</li>
+                <li>Experience Passport with achievements and rewards</li>
+                <li>Real-time analytics for brands to track performance</li>
+            </ul>
+        """, unsafe_allow_html=True)
         
     with c2:
-        with st.container(border=True):
-            st.subheader("👨‍💻 Development Team")
-            st.write("• Mr. Ronit Kapoor\n• Mr. Syed Ali Kavish Abdi\n• Ms. Shania Mehta\n• Ms. Vyomika Mugdha\n• Mr. Krishna Sharma\n• Mr. Khushil Sharma")
-            st.caption("Built with ❤️ by the SP Jain Global team in Dubai, UAE.")
+        st.markdown("""
+            <div class="team-card" style="margin-bottom: 20px; background-color: #fce4ec;">
+                <h3 style="color:#d81b60 !important;">📊 Quick Stats</h3>
+                <p style="display:flex; justify-content:space-between;"><b>👥 Users</b> <span>5,000+</span></p>
+                <p style="display:flex; justify-content:space-between;"><b>🏢 Brands</b> <span>200+</span></p>
+                <p style="display:flex; justify-content:space-between;"><b>🎯 Experiences</b> <span>500+</span></p>
+                <p style="display:flex; justify-content:space-between;"><b>⭐ Avg. Rating</b> <span>4.7</span></p>
+            </div>
+            
+            <div class="team-card">
+                <h3>👨‍💻 Development Team</h3>
+                <div class="team-member">Mr. Ronit Kapoor</div>
+                <div class="team-member">Mr. Syed Ali Kavish Abdi</div>
+                <div class="team-member">Ms. Shania Mehta</div>
+                <div class="team-member">Ms. Vyomika Mugdha</div>
+                <div class="team-member">Mr. Krishna Sharma</div>
+                <div class="team-member">Mr. Khushil Sharma</div>
+                <hr>
+                <p style="font-size:12px; color:#666; margin:0;">Built with ❤️ by the SP Jain Global team in Dubai, UAE.<br>© 2026 BrandDrop</p>
+            </div>
+        """, unsafe_allow_html=True)
 
+    render_footer()
+
+# ==========================================
+# PAGE 7: NOTIFICATIONS (Hidden Routing Page)
+# ==========================================
+elif st.session_state.current_page == "🔔 Notifications":
+    st.title("🔔 Your Notifications")
+    st.success("✨ **Reward Unlocked:** You have enough points to claim a Free Coffee at % Arabica!")
+    st.success("✨ **Reward Unlocked:** You have enough points to claim an AED 50 Sephora Voucher!")
+    st.info("🎟️ **Upcoming Event:** Don't forget your Dior Mystery Gift drop tomorrow at 10:00 AM at Mall of the Emirates.")
+    
+    if st.button("⬅️ Back to Discover", type="primary"):
+        change_page("✨ Discover")
+        st.rerun()
+        
     render_footer()
