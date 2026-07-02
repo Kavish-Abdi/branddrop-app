@@ -3,218 +3,281 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="BrandDrop Prototype", page_icon="✨", layout="centered")
 
-# --- CUSTOM CSS (LUXURY DARK MODE & TIMES NEW ROMAN) ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
     /* Main background and text */
-    .stApp {
-        background-color: #121212;
-        color: #ffffff;
-    }
+    .stApp { background-color: #121212; color: #ffffff; }
     
-    /* Times New Roman for Main Headings */
-    h1 {
-        font-family: 'Times New Roman', Times, serif !important;
-        color: #C5837C !important; /* Rose Gold */
-        font-size: 2.5rem !important;
-    }
-    
-    /* Helvetica for Subheadings to keep it modern */
-    h2, h3 {
-        color: #C5837C !important;
-        font-family: 'Helvetica Neue', sans-serif;
-    }
-    
-    /* Cards and Expanders */
-    div.stExpander, div.css-1r6slb0, div.css-12oz5g7 {
-        background-color: #1e1e1e !important;
-        border: 1px solid #333 !important;
-        border-radius: 10px !important;
-        padding: 15px;
-    }
+    h1 { font-family: 'Times New Roman', Times, serif !important; color: #C5837C !important; font-size: 2.5rem !important; }
+    h2, h3 { color: #C5837C !important; font-family: 'Helvetica Neue', sans-serif; }
     
     /* Buttons */
-    .stButton>button {
-        background-color: #C5837C;
-        color: white;
-        border-radius: 20px;
-        border: none;
-        width: 100%;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #a86c66;
-        color: white;
-        border: 1px solid white;
-    }
+    .stButton>button { background-color: #C5837C; color: white; border-radius: 20px; border: none; width: 100%; font-weight: bold; transition: 0.3s; }
+    .stButton>button:hover { background-color: #a86c66; color: white; border: 1px solid white; }
     
-    /* Featured Badge */
-    .featured-badge {
-        background-color: #C5837C;
-        color: white;
-        padding: 4px 10px;
+    /* Square Stat Cards (Profile) */
+    .stat-square {
+        background-color: #f8f9fa;
         border-radius: 12px;
-        font-size: 12px;
-        font-weight: bold;
-        display: inline-block;
-        margin-bottom: 10px;
+        padding: 20px 10px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        margin-bottom: 15px;
     }
+    .stat-square h2 { color: #1e1e2f !important; font-size: 28px; margin: 10px 0; font-family: 'Arial', sans-serif;}
+    .stat-square p { color: #6c757d; font-size: 12px; margin: 0; font-weight: bold;}
+    
+    /* Global Stats Bar */
+    .global-stats-bar {
+        background: linear-gradient(90deg, #e0f7fa 0%, #b2ebf2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+        margin: 40px 0 20px 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .global-stats-bar div { display: flex; flex-direction: column; align-items: center; }
+    .global-stats-bar h3 { color: #112233 !important; margin: 0; font-size: 24px; }
+    .global-stats-bar p { color: #546e7a; margin: 0; font-size: 13px; font-weight: 500;}
+    
+    /* Futuristic Passport Cards */
+    .cyber-card {
+        background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid #0f3460;
+        box-shadow: 0 0 15px rgba(197, 131, 124, 0.2);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        color: #fff;
+        transition: transform 0.3s;
+    }
+    .cyber-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(197, 131, 124, 0.5); }
+    .cyber-card .glow-icon { font-size: 40px; text-shadow: 0 0 15px #C5837C; margin-bottom: 10px;}
+    
+    /* Footer */
+    .brand-footer {
+        background-color: #26C6DA; /* Cyan background matching image */
+        padding: 30px 20px;
+        text-align: center;
+        border-radius: 15px;
+        margin-top: 50px;
+    }
+    .brand-footer h2 { margin: 0; font-family: 'Helvetica', sans-serif; font-size: 28px; }
+    .brand-footer .brand-text { color: #111111; font-weight: 900;}
+    .brand-footer .drop-text { color: #FF5252; font-weight: 900;}
+    .brand-footer .tagline { color: #444; font-size: 15px; margin: 10px 0; font-weight: 500;}
+    .brand-footer .copyright { color: #666; font-size: 12px; margin: 0;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- SESSION STATE (DATABASE SIMULATION) ---
+# --- SESSION STATE ---
 if 'passport_stamps' not in st.session_state:
-    st.session_state.passport_stamps = ["🛍️ Dubai Explorer (Level 1)"]
+    st.session_state.passport_stamps = ["🛍️ Dubai Explorer", "💄 Beauty Insider"]
 if 'points' not in st.session_state:
-    st.session_state.points = 1250
-if 'clubs' not in st.session_state:
-    st.session_state.clubs = ["💄 Beauty Club"]
+    st.session_state.points = 450
+if 'experiences' not in st.session_state:
+    st.session_state.experiences = 3
+
+# --- HELPER COMPONENTS ---
+def render_footer():
+    st.markdown("""
+        <div class="global-stats-bar">
+            <div><h3>5,247</h3><p>Total Users</p></div>
+            <div><h3>287</h3><p>Active Brands</p></div>
+            <div><h3>1,432</h3><p>Experiences Created</p></div>
+            <div><h3>4.7</h3><p>Avg. Rating</p></div>
+        </div>
+        <div class="brand-footer">
+            <h2><span class="brand-text">Brand</span><span class="drop-text">Drop</span></h2>
+            <p class="tagline">Discover. Experience. Earn. — Where brands come to life.</p>
+            <p class="copyright">© 2026 BrandDrop. All rights reserved. UAE's First Consumer Experience Marketplace.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 # --- NAVIGATION ---
 st.sidebar.title("BrandDrop.")
 st.sidebar.caption("📍 Dubai, UAE")
+# Reordered to make Discover the default landing page
 page = st.sidebar.radio("Navigation", [
-    "👤 My Profile", 
     "✨ Discover", 
+    "👤 My Profile", 
     "🤝 Consumer Clubs",
     "⭐ Passport & Rewards", 
     "📖 About BrandDrop"
 ])
 
 # ==========================================
-# PAGE 1: USER PROFILE (LOGGED IN VIEW)
+# PAGE 1: DISCOVER (LANDING PAGE)
 # ==========================================
-if page == "👤 My Profile":
-    st.title("My Profile")
-    
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.image("https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80", width=120)
-    with col2:
-        st.subheader("Aisha Al Mansoori")
-        st.write("🌟 **Status:** Gold Member")
-        st.write(f"🪙 **Points Balance:** {st.session_state.points}")
-    
-    st.divider()
-    
-    st.write("### Active Memberships")
-    for club in st.session_state.clubs:
-        st.info(f"Member of: **{club}**")
-        
-    st.write("### Upcoming Reservations")
-    st.success("🎟️ **Dior Secret Pop-up** - Tomorrow, 10:00 AM @ Mall of the Emirates")
-
-# ==========================================
-# PAGE 2: DISCOVER
-# ==========================================
-elif page == "✨ Discover":
+if page == "✨ Discover":
     st.title("Discover")
     st.write("Where brands compete for your attention through experiences.")
     
-    # FEATURED EXPERIENCE
-    st.markdown('<div class="featured-badge">🌟 FEATURED THIS WEEK</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background-color:#C5837C;color:white;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;display:inline-block;margin-bottom:10px;">🌟 FEATURED THIS WEEK</div>', unsafe_allow_html=True)
     st.image("https://images.unsplash.com/photo-1555529771-835f59fc5efe?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80", use_container_width=True)
     st.subheader("Charlotte Tilbury: The Magic Oasis")
     st.caption("📍 Burj Park, Downtown Dubai • Friday, 6 PM - 10 PM")
-    st.write("Step into a magical immersive oasis. First 50 attendees unlock the exclusive 'Glow Guru' passport stamp and a full-size mystery product.")
-    if st.button("Reserve VIP Access (500 pts)", key="featured"):
-        st.success("VIP Access Confirmed! Check your profile for the QR ticket.")
+    if st.button("Reserve VIP Access", key="featured"):
+        st.success("VIP Access Confirmed!")
     
     st.divider()
-    
-    # STANDARD EXPERIENCES
     st.write("### Trending Near You")
     
-    col1, col2 = st.columns(2)
-    with col1:
+    # Grid of experiences
+    c1, c2 = st.columns(2)
+    with c1:
+        st.image("https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
+        st.markdown("**Nike Air Max Scavenger Hunt**")
+        st.caption("Dubai Design District")
+        st.button("Join Hunt", key="nike")
+        
         st.image("https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
-        st.markdown("**Fenty Masterclass**")
-        st.caption("Dubai Mall • Today")
-        if st.button("Reserve", key="fenty"):
-            st.session_state.passport_stamps.append("💄 Beauty Insider")
-            st.success("Reserved!")
-            
-    with col2:
+        st.markdown("**Fenty Beauty Masterclass**")
+        st.caption("Dubai Mall")
+        st.button("Reserve Spot", key="fenty")
+
+    with c2:
+        st.image("https://images.unsplash.com/photo-1511920170033-f8396924c348?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
+        st.markdown("**Nespresso Secret Tasting**")
+        st.caption("City Walk")
+        st.button("Get Invite", key="nespresso")
+        
         st.image("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
-        st.markdown("**Dior Mystery Gift**")
-        st.caption("Mall of the Emirates • Tomorrow")
-        if st.button("Reserve", key="dior"):
-            st.session_state.passport_stamps.append("👗 Fashion Icon")
-            st.success("Reserved!")
+        st.markdown("**Dior Mystery Gift Drop**")
+        st.caption("Mall of the Emirates")
+        st.button("Claim Drop", key="dior")
+        
+    render_footer()
+
+# ==========================================
+# PAGE 2: USER PROFILE
+# ==========================================
+elif page == "👤 My Profile":
+    st.title("My Profile")
+    
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        st.image("https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80", width=120)
+    with c2:
+        st.subheader("Aisha Al Mansoori")
+        st.write("🌟 **Status:** Gold Member")
+        st.write("📍 Dubai, UAE")
+
+    st.write("") # spacing
+    
+    # Square Interactive Stats (Mirroring the image)
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f'<div class="stat-square"><div>🎯</div><h2>{st.session_state.experiences}</h2><p>Experiences Attended</p></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="stat-square"><div>🏆</div><h2>{st.session_state.points}</h2><p>Total Points Earned</p></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown(f'<div class="stat-square"><div>📗</div><h2>{len(st.session_state.passport_stamps)}/8</h2><p>Passport Stamps</p></div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="stat-square"><div>🔥</div><h2>8</h2><p>Available Experiences</p></div>', unsafe_allow_html=True)
+
+    st.divider()
+    st.write("### Upcoming Reservations")
+    st.success("🎟️ **Dior Secret Pop-up** - Tomorrow, 10:00 AM @ Mall of the Emirates")
+    
+    render_footer()
 
 # ==========================================
 # PAGE 3: CONSUMER CLUBS
 # ==========================================
 elif page == "🤝 Consumer Clubs":
-    st.title("Clubs")
-    st.write("Join niche communities to get highly targeted event invites. No spam, just what you love.")
+    st.title("Consumer Clubs")
+    st.write("Join niche communities to get highly targeted event invites.")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
+        st.image("https://images.unsplash.com/photo-1552346154-21d32810baa3?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
         st.markdown("### 👟 Sneakerhead Hub")
-        st.write("Early access to drops, trading events, and streetwear pop-ups.")
-        if st.button("Join Club", key="sneaker"):
-            if "👟 Sneakerhead Hub" not in st.session_state.clubs:
-                st.session_state.clubs.append("👟 Sneakerhead Hub")
-                st.success("Joined!")
-                
-        st.markdown("### ☕ Coffee Connoisseurs")
-        st.write("Secret menu tastings, barista workshops, and farm-to-cup events.")
-        if st.button("Join Club", key="coffee"):
-            if "☕ Coffee Connoisseurs" not in st.session_state.clubs:
-                st.session_state.clubs.append("☕ Coffee Connoisseurs")
-                st.success("Joined!")
-
-    with col2:
+        st.caption("Early access to drops and streetwear pop-ups.")
+        st.button("Join Club", key="c_sneak")
+        
+        st.write("")
+        st.image("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
         st.markdown("### 💎 Luxury Lounge")
-        st.write("Private viewing rooms, high-jewelry exhibitions, and VIP galas.")
-        if st.button("Join Club", key="luxury"):
-            if "💎 Luxury Lounge" not in st.session_state.clubs:
-                st.session_state.clubs.append("💎 Luxury Lounge")
-                st.success("Joined!")
-                
+        st.caption("Private viewing rooms and VIP galas.")
+        st.button("Joined", disabled=True, key="c_lux")
+        
+        st.write("")
+        st.image("https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
+        st.markdown("### 🎮 Tech & Gaming")
+        st.caption("Console launches, VR experiences, and tournaments.")
+        st.button("Join Club", key="c_tech")
+
+    with c2:
+        st.image("https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
+        st.markdown("### ☕ Coffee Connoisseurs")
+        st.caption("Secret menu tastings and barista workshops.")
+        st.button("Join Club", key="c_coffee")
+        
+        st.write("")
+        st.image("https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
         st.markdown("### 🧘‍♀️ Wellness Collective")
-        st.write("Beach yoga, activewear launches, and organic food tastings.")
-        if st.button("Join Club", key="wellness"):
-            if "🧘‍♀️ Wellness Collective" not in st.session_state.clubs:
-                st.session_state.clubs.append("🧘‍♀️ Wellness Collective")
-                st.success("Joined!")
+        st.caption("Beach yoga and organic food tastings.")
+        st.button("Join Club", key="c_well")
+        
+        st.write("")
+        st.image("https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80", use_container_width=True)
+        st.markdown("### 🍣 Foodies Club")
+        st.caption("Restaurant soft-openings and tasting menus.")
+        st.button("Join Club", key="c_food")
+        
+    render_footer()
 
 # ==========================================
 # PAGE 4: PASSPORT & REWARDS
 # ==========================================
 elif page == "⭐ Passport & Rewards":
-    st.title("My Passport")
+    st.title("Digital Passport")
+    st.write("Your futuristic ledger of real-world brand interactions.")
     
-    st.subheader("Unlocked Achievements")
-    for stamp in set(st.session_state.passport_stamps):
-        st.markdown(f"### {stamp}")
-        st.progress(100)
+    # Futuristic Grid
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        <div class="cyber-card">
+            <div class="glow-icon">💄</div>
+            <h3 style="color:white !important; margin:0;">Beauty Insider</h3>
+            <p style="color:#aaa; font-size:12px;">Level 2 Unlocked</p>
+            <div style="background:#333; height:4px; width:100%; margin-top:10px; border-radius:2px;">
+                <div style="background:#C5837C; height:4px; width:100%; border-radius:2px; box-shadow: 0 0 10px #C5837C;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div class="cyber-card">
+            <div class="glow-icon">🛍️</div>
+            <h3 style="color:white !important; margin:0;">Dubai Explorer</h3>
+            <p style="color:#aaa; font-size:12px;">Level 1 Unlocked</p>
+            <div style="background:#333; height:4px; width:100%; margin-top:10px; border-radius:2px;">
+                <div style="background:#C5837C; height:4px; width:100%; border-radius:2px; box-shadow: 0 0 10px #C5837C;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
     st.divider()
     
-    st.title("Rewards Center")
-    st.write(f"You have **{st.session_state.points}** points to spend.")
+    st.title("Rewards Network")
+    st.write(f"Balance: **{st.session_state.points}** points")
     
-    st.markdown("#### 🎟️ AED 100 Sephora Gift Card")
+    st.markdown("#### 🎟️ AED 100 Sephora Digital Gift Card")
     st.caption("Cost: 1,000 pts")
-    if st.button("Redeem Gift Card"):
-        if st.session_state.points >= 1000:
-            st.session_state.points -= 1000
-            st.success("Redeemed! Check your email.")
-        else:
-            st.error("Not enough points.")
+    st.button("Insufficient Points", disabled=True)
             
     st.markdown("#### ☕ Free Coffee at % Arabica")
     st.caption("Cost: 200 pts")
-    if st.button("Redeem Coffee"):
-        if st.session_state.points >= 200:
-            st.session_state.points -= 200
-            st.success("Redeemed! QR Code generated.")
-        else:
-            st.error("Not enough points.")
+    if st.button("Redeem Reward"):
+        st.success("Access Code Generated: BRND-DROP-882")
+        
+    render_footer()
 
 # ==========================================
 # PAGE 5: ABOUT BRANDDROP
@@ -228,21 +291,25 @@ elif page == "📖 About BrandDrop":
     """)
     
     st.divider()
+    st.write("### Community Voices")
     
-    st.write("### What People Are Saying")
-    
-    st.info("""
-    *"BrandDrop changed how we launch products in Dubai. Instead of paying for billboard impressions, we had 300 highly engaged beauty lovers physically test our new foundation on day one."*
-    
-    — **Sarah K., Marketing Director at leading Cosmetics Brand**
-    """)
-    
+    # Generic User Testimonials
     st.success("""
     *"I used to hate targeted ads on Instagram. Now I check BrandDrop every weekend to see what cool pop-ups are happening around the city. Earning points for attending is just a bonus!"*
     
     — **Aisha M., BrandDrop User**
     """)
     
-    st.divider()
-    st.write("📍 Headquartered in Dubai, UAE.")
-    st.write("📧 partner@branddrop.ae")
+    st.info("""
+    *"Such a cool concept. I joined the Sneakerhead Hub and got early access to a drop at Dubai Design District that I wouldn't have known about otherwise."*
+    
+    — **Khalid A., Dubai Resident**
+    """)
+    
+    st.success("""
+    *"Finally, an app that actually rewards you for doing fun things instead of just giving you 5% off coupon codes."*
+    
+    — **Fatima S., University Student**
+    """)
+    
+    render_footer()
