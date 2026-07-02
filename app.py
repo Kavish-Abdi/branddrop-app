@@ -3,13 +3,13 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="BrandDrop Prototype", page_icon="✨", layout="wide")
 
-# --- SESSION STATE FOR NAVIGATION ---
-# This allows buttons outside the menu (like Notifications) to change the page
+# --- SESSION STATE FOR NAVIGATION & REWARDS ---
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "✨ Discover"
-
-def change_page(page_name):
-    st.session_state.current_page = page_name
+if 'claimed_coffee' not in st.session_state:
+    st.session_state.claimed_coffee = False
+if 'claimed_sephora' not in st.session_state:
+    st.session_state.claimed_sephora = False
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -39,7 +39,7 @@ st.markdown("""
     /* Reward Box Styling */
     .reward-gold {
         background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7);
-        color: #111; padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        color: #111; padding: 20px; border-radius: 12px; margin-bottom: 10px;
         box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3); font-weight: 900;
         display: flex; justify-content: space-between; align-items: center;
     }
@@ -78,25 +78,31 @@ def render_footer():
         </div>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR NAVIGATION ---
+# --- SIDEBAR NAVIGATION LOGIC ---
 try:
     st.sidebar.image("logo.jpeg", use_container_width=True)
 except:
     st.sidebar.title("BrandDrop.")
 st.sidebar.caption("📍 Dubai, UAE")
 
-# Interactive Page Routing
 pages = ["✨ Discover", "👤 My Profile", "🤝 Consumer Clubs", "⭐ Passport & Rewards", "💬 Testimonials", "📖 About BrandDrop", "🔔 Notifications"]
-page = st.sidebar.radio("Navigation", pages, index=pages.index(st.session_state.current_page))
+try:
+    idx = pages.index(st.session_state.current_page)
+except ValueError:
+    idx = 0
 
-# Update state if radio changes
+page = st.sidebar.radio("Navigation", pages, index=idx)
+
+# Sync radio selection with session state
 if page != st.session_state.current_page:
     st.session_state.current_page = page
     st.rerun()
 
 st.sidebar.divider()
+
+# Clickable Notification Button in Sidebar
 if st.sidebar.button("🔔 3 New Notifications", type="primary"):
-    change_page("🔔 Notifications")
+    st.session_state.current_page = "🔔 Notifications"
     st.rerun()
     
 st.sidebar.markdown("<div style='text-align:center; color:#888; font-size:12px; margin-top:20px;'>📱 v2.0.0<br>🇦🇪 Made in UAE</div>", unsafe_allow_html=True)
@@ -133,7 +139,13 @@ if st.session_state.current_page == "✨ Discover":
                 st.image(img, use_container_width=True)
                 st.markdown(f"**{name}**")
                 st.caption(f"📍 {loc} | {tag}")
-                st.button("Reserve", key=f"evt_{i}")
+                
+                # Interactive Popover for Reservation
+                with st.popover("Reserve Slot", use_container_width=True):
+                    st.write(f"🗓️ **Next Slot:** Tomorrow, 6:00 PM")
+                    st.write(f"📍 {loc}")
+                    if st.button("Confirm", key=f"conf_{i}", use_container_width=True):
+                        st.success(f"Confirmed! Ref Code: BRND-{1045+i}X")
 
     render_footer()
 
@@ -143,8 +155,9 @@ if st.session_state.current_page == "✨ Discover":
 elif st.session_state.current_page == "👤 My Profile":
     st.title("My Profile")
     
+    # Notification Banner
     if st.button("🔔 You have 3 pending reward claims! Click to view.", type="primary", use_container_width=True):
-        change_page("🔔 Notifications")
+        st.session_state.current_page = "🔔 Notifications"
         st.rerun()
         
     st.write("")
@@ -186,8 +199,9 @@ elif st.session_state.current_page == "🤝 Consumer Clubs":
     st.title("Consumer Clubs")
     st.write("Join 12 exclusive communities tailored to your interests.")
     
+    # Updated image links to guarantee they render
     clubs = [
-        ("👟 Sneakerhead Hub", "https://images.unsplash.com/photo-1552346154-21d32810baa3?w=500&q=80"),
+        ("👟 Sneakerhead Hub", "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80"),
         ("🧘‍♀️ Wellness Collective", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&q=80"), 
         ("🐾 Pet Lovers", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&q=80"), 
         ("☕ Coffee Connoisseurs", "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=500&q=80"), 
@@ -197,7 +211,7 @@ elif st.session_state.current_page == "🤝 Consumer Clubs":
         ("🍣 Foodies Club", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"), 
         ("💎 Luxury Lounge", "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=500&q=80"), 
         ("💄 Beauty Insiders", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=80"), 
-        ("🎨 Art & Design", "https://images.unsplash.com/photo-1513364776144-60967f0f7ffe?w=500&q=80"), 
+        ("🎨 Art & Design", "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80"), 
         ("✈️ Travel Explorers", "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=80")
     ]
     
@@ -252,23 +266,37 @@ elif st.session_state.current_page == "⭐ Passport & Rewards":
     st.divider()
     st.subheader("🏆 Reward Catalog")
     
+    # Interactive Rewards Logic
+    if not st.session_state.claimed_coffee:
+        st.markdown("""
+            <div class="reward-gold">
+                <div>
+                    <h4 style="margin:0; color:#111;">☕ % Arabica Free Coffee</h4>
+                    <span style="font-size:14px;">Cost: 200 pts | Status: Claimable</span>
+                </div>
+                <div style="font-size:30px;">✨</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Claim Coffee Reward"):
+            st.session_state.claimed_coffee = True
+            st.rerun()
+
+    if not st.session_state.claimed_sephora:
+        st.markdown("""
+            <div class="reward-gold">
+                <div>
+                    <h4 style="margin:0; color:#111;">🎟️ AED 50 Sephora Voucher</h4>
+                    <span style="font-size:14px;">Cost: 400 pts | Status: Claimable</span>
+                </div>
+                <div style="font-size:30px;">✨</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Claim Sephora Voucher"):
+            st.session_state.claimed_sephora = True
+            st.rerun()
+            
+    # Always display standard locked rewards
     st.markdown("""
-        <div class="reward-gold">
-            <div>
-                <h4 style="margin:0; color:#111;">☕ % Arabica Free Coffee</h4>
-                <span style="font-size:14px;">Cost: 200 pts | Status: Claimable</span>
-            </div>
-            <div style="font-size:30px;">✨</div>
-        </div>
-        
-        <div class="reward-gold">
-            <div>
-                <h4 style="margin:0; color:#111;">🎟️ AED 50 Sephora Voucher</h4>
-                <span style="font-size:14px;">Cost: 400 pts | Status: Claimable</span>
-            </div>
-            <div style="font-size:30px;">✨</div>
-        </div>
-        
         <div class="reward-locked">
             <h4 style="margin:0; color:#888;">🚢 VIP Yacht Party - Marina</h4>
             <span style="font-size:14px;">Requires 5,000 pts</span>
@@ -279,6 +307,15 @@ elif st.session_state.current_page == "⭐ Passport & Rewards":
             <span style="font-size:14px;">Requires 3,000 pts</span>
         </div>
     """, unsafe_allow_html=True)
+
+    # If any reward is claimed, show a NEW locked reward at the bottom
+    if st.session_state.claimed_coffee or st.session_state.claimed_sephora:
+        st.markdown("""
+            <div class="reward-locked">
+                <h4 style="margin:0; color:#888;">🏎️ F1 Abu Dhabi Paddock Pass</h4>
+                <span style="font-size:14px;">Requires 10,000 pts</span>
+            </div>
+        """, unsafe_allow_html=True)
 
     render_footer()
 
@@ -379,16 +416,24 @@ elif st.session_state.current_page == "📖 About BrandDrop":
     render_footer()
 
 # ==========================================
-# PAGE 7: NOTIFICATIONS (Hidden Routing Page)
+# PAGE 7: NOTIFICATIONS
 # ==========================================
 elif st.session_state.current_page == "🔔 Notifications":
     st.title("🔔 Your Notifications")
+    st.write("Stay updated on your rewards, club invites, and event reminders.")
+    
     st.success("✨ **Reward Unlocked:** You have enough points to claim a Free Coffee at % Arabica!")
     st.success("✨ **Reward Unlocked:** You have enough points to claim an AED 50 Sephora Voucher!")
     st.info("🎟️ **Upcoming Event:** Don't forget your Dior Mystery Gift drop tomorrow at 10:00 AM at Mall of the Emirates.")
+    st.warning("⭐ **Passport Update:** You are just 1 event away from unlocking the 'Dubai Explorer' stamp.")
+    st.info("🤝 **Club Invite:** You've been exclusively invited to the 'Sneakerhead Hub' VIP launch at D3.")
+    st.error("🔥 **Trending Now:** The Charlotte Tilbury Oasis event is 90% full. Reserve your spot now!")
+    st.success("🏆 **Milestone Reached:** Congratulations! You just crossed 1,000 lifetime points.")
+    st.info("🎁 **Surprise Drop:** Check the Discover page for a hidden Nespresso tasting event added today.")
     
+    st.divider()
     if st.button("⬅️ Back to Discover", type="primary"):
-        change_page("✨ Discover")
+        st.session_state.current_page = "✨ Discover"
         st.rerun()
         
     render_footer()
