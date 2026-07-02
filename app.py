@@ -3,13 +3,12 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="BrandDrop Prototype", page_icon="✨", layout="wide")
 
-# --- SESSION STATE FOR NAVIGATION & REWARDS ---
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = "✨ Discover"
-if 'claimed_coffee' not in st.session_state:
-    st.session_state.claimed_coffee = False
-if 'claimed_sephora' not in st.session_state:
-    st.session_state.claimed_sephora = False
+# --- SESSION STATE (DATABASE SIMULATION) ---
+if 'current_page' not in st.session_state: st.session_state.current_page = "✨ Discover"
+if 'claimed_coffee' not in st.session_state: st.session_state.claimed_coffee = False
+if 'claimed_sephora' not in st.session_state: st.session_state.claimed_sephora = False
+if 'reserved_events' not in st.session_state: st.session_state.reserved_events = []
+if 'joined_clubs' not in st.session_state: st.session_state.joined_clubs = []
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -22,10 +21,17 @@ st.markdown("""
     .stButton>button { background-color: #C5837C; color: white; border-radius: 20px; border: none; font-weight: bold; transition: all 0.3s ease; width: 100%;}
     .stButton>button:hover { background-color: #a86c66; transform: scale(1.02); }
     
-    /* Profile Stats */
+    /* Profile Stats (Larger Icons) */
     .stat-square { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 20px 10px; text-align: center; margin-bottom: 15px;}
+    .stat-icon { font-size: 45px; display: block; margin-bottom: 10px; line-height: 1;}
     .stat-square h2 { color: #fff !important; font-size: 28px; margin: 10px 0; font-family: 'Arial', sans-serif;}
     .stat-square p { color: #888; font-size: 12px; margin: 0; font-weight: bold;}
+    
+    /* B2B Brand Stat Cards */
+    .brand-stat { background-color: #f8f9fa; border-radius: 12px; padding: 20px 10px; text-align: center; margin-bottom: 15px; color: #111;}
+    .brand-stat .stat-icon { font-size: 40px; margin-bottom: 5px; }
+    .brand-stat h2 { color: #111 !important; font-size: 26px; margin: 5px 0; font-family: 'Arial', sans-serif;}
+    .brand-stat p { color: #666; font-size: 12px; margin: 0; font-weight: bold;}
     
     /* Passport Progress Cards */
     .stamp-card { background: linear-gradient(135deg, #2a1b3d 0%, #4a1942 100%); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #C5837C; }
@@ -37,21 +43,9 @@ st.markdown("""
     .progress-text { font-size: 11px; color: #ccc; }
     
     /* Reward Box Styling */
-    .reward-gold {
-        background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7);
-        color: #111; padding: 20px; border-radius: 12px; margin-bottom: 10px;
-        box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3); font-weight: 900;
-        display: flex; justify-content: space-between; align-items: center;
-    }
-    .reward-locked {
-        background: repeating-linear-gradient(45deg, #1a1a1a, #1a1a1a 10px, #222 10px, #222 20px);
-        color: #666; padding: 20px; border-radius: 12px; margin-bottom: 15px;
-        border: 2px solid #333; position: relative; overflow: hidden;
-    }
-    .reward-locked::after {
-        content: '⛓️ 🔒 ⛓️'; position: absolute; right: 20px; top: 50%;
-        transform: translateY(-50%); font-size: 24px; letter-spacing: 5px; opacity: 0.7;
-    }
+    .reward-gold { background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7); color: #111; padding: 20px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3); font-weight: 900; display: flex; justify-content: space-between; align-items: center; }
+    .reward-locked { background: repeating-linear-gradient(45deg, #1a1a1a, #1a1a1a 10px, #222 10px, #222 20px); color: #666; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 2px solid #333; position: relative; overflow: hidden; }
+    .reward-locked::after { content: '⛓️ 🔒 ⛓️'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 24px; letter-spacing: 5px; opacity: 0.7; }
     
     /* About Page Specifics */
     .about-card { background-color: #fce4ec; border-radius: 15px; padding: 20px; margin-bottom: 20px; color: #333; }
@@ -85,7 +79,7 @@ except:
     st.sidebar.title("BrandDrop.")
 st.sidebar.caption("📍 Dubai, UAE")
 
-pages = ["✨ Discover", "👤 My Profile", "🤝 Consumer Clubs", "⭐ Passport & Rewards", "💬 Testimonials", "📖 About BrandDrop", "🔔 Notifications"]
+pages = ["✨ Discover", "👤 My Profile", "🤝 Consumer Clubs", "⭐ Passport & Rewards", "💬 Testimonials", "🏢 For Brands", "📖 About BrandDrop", "🔔 Notifications"]
 try:
     idx = pages.index(st.session_state.current_page)
 except ValueError:
@@ -93,14 +87,12 @@ except ValueError:
 
 page = st.sidebar.radio("Navigation", pages, index=idx)
 
-# Sync radio selection with session state
 if page != st.session_state.current_page:
     st.session_state.current_page = page
     st.rerun()
 
 st.sidebar.divider()
 
-# Clickable Notification Button in Sidebar
 if st.sidebar.button("🔔 3 New Notifications", type="primary"):
     st.session_state.current_page = "🔔 Notifications"
     st.rerun()
@@ -121,11 +113,11 @@ if st.session_state.current_page == "✨ Discover":
         ("Dior Mystery Gift", "MOE", "👗 Luxury", "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=500&q=80"),
         ("Apple Vision Pro Demo", "Dubai Mall", "💻 Tech", "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80"), 
         ("Porsche Track Day", "Autodrome", "🏎️ Auto", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=500&q=80"),
-        ("Banaras Artisanal Showcase", "Alserkal", "🧵 Heritage", "https://images.unsplash.com/photo-1605814518731-863a35f29910?w=500&q=80"), 
+        ("Banaras Artisanal Showcase", "Alserkal", "🧵 Heritage", "https://images.unsplash.com/photo-1583391733959-f183063544d3?w=500&q=80"), 
         ("Packaged Foods Expo", "WTC", "🍱 F&B", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"),
         ("Chanel Pop-up", "Kite Beach", "💎 Luxury", "https://images.unsplash.com/photo-1555529771-835f59fc5efe?w=500&q=80"), 
         ("Sephora VIP Night", "Dubai Mall", "💄 Beauty", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&q=80"),
-        ("Supply Chain Expo", "DIFC", "⚙️ B2B/Tech", "https://images.unsplash.com/photo-1586528116311-ad8ed7c663c0?w=500&q=80"), 
+        ("Supply Chain Expo", "DIFC", "⚙️ B2B/Tech", "https://images.unsplash.com/photo-1553413077-190dd305871c?w=500&q=80"), 
         ("Red Bull Gaming", "JBR", "🎮 Gaming", "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=500&q=80"),
         ("Adidas Run Club", "Marina", "🏃 Fitness", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&q=80"), 
         ("Samsung Galaxy Launch", "Bluewaters", "📱 Tech", "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&q=80"),
@@ -140,11 +132,12 @@ if st.session_state.current_page == "✨ Discover":
                 st.markdown(f"**{name}**")
                 st.caption(f"📍 {loc} | {tag}")
                 
-                # Interactive Popover for Reservation
                 with st.popover("Reserve Slot", use_container_width=True):
                     st.write(f"🗓️ **Next Slot:** Tomorrow, 6:00 PM")
                     st.write(f"📍 {loc}")
                     if st.button("Confirm", key=f"conf_{i}", use_container_width=True):
+                        if name not in st.session_state.reserved_events:
+                            st.session_state.reserved_events.append(name)
                         st.success(f"Confirmed! Ref Code: BRND-{1045+i}X")
 
     render_footer()
@@ -155,7 +148,6 @@ if st.session_state.current_page == "✨ Discover":
 elif st.session_state.current_page == "👤 My Profile":
     st.title("My Profile")
     
-    # Notification Banner
     if st.button("🔔 You have 3 pending reward claims! Click to view.", type="primary", use_container_width=True):
         st.session_state.current_page = "🔔 Notifications"
         st.rerun()
@@ -178,17 +170,45 @@ elif st.session_state.current_page == "👤 My Profile":
     st.write("")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown('<div class="stat-square"><div>🎯</div><h2>3</h2><p>Experiences Attended</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-square"><div class="stat-icon">🎯</div><h2>{3 + len(st.session_state.reserved_events)}</h2><p>Experiences Attended</p></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="stat-square"><div>🏆</div><h2>1250</h2><p>Total Points Earned</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-square"><div class="stat-icon">🏆</div><h2>1250</h2><p>Total Points Earned</p></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="stat-square"><div>📗</div><h2>1/8</h2><p>Passport Stamps</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-square"><div class="stat-icon">📗</div><h2>1/8</h2><p>Passport Stamps</p></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown('<div class="stat-square"><div>🔥</div><h2>8</h2><p>Available Experiences</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-square"><div class="stat-icon">🔥</div><h2>8</h2><p>Available Experiences</p></div>', unsafe_allow_html=True)
 
-    with st.expander("Privacy & Account Settings"):
-        st.write("Notifications: **ON**")
-        st.write("Location Services: **ON**")
+    st.divider()
+    
+    r1, r2, r3 = st.columns(3)
+    
+    with r1:
+        st.subheader("🗓️ My Reservations")
+        if st.session_state.reserved_events:
+            for ev in st.session_state.reserved_events:
+                st.info(f"🎟️ {ev} - Tomorrow, 6:00 PM")
+        else:
+            st.write("No reservations yet.")
+            
+    with r2:
+        st.subheader("🏆 Claimed Rewards")
+        has_rewards = False
+        if st.session_state.claimed_coffee:
+            st.success("☕ % Arabica Free Coffee")
+            has_rewards = True
+        if st.session_state.claimed_sephora:
+            st.success("🎟️ AED 50 Sephora Voucher")
+            has_rewards = True
+        if not has_rewards:
+            st.write("No rewards claimed yet.")
+
+    with r3:
+        st.subheader("🤝 My Clubs")
+        if st.session_state.joined_clubs:
+            for clb in st.session_state.joined_clubs:
+                st.info(f"{clb}")
+        else:
+            st.write("No clubs joined yet.")
 
     render_footer()
 
@@ -199,7 +219,6 @@ elif st.session_state.current_page == "🤝 Consumer Clubs":
     st.title("Consumer Clubs")
     st.write("Join 12 exclusive communities tailored to your interests.")
     
-    # Updated image links to guarantee they render
     clubs = [
         ("👟 Sneakerhead Hub", "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80"),
         ("🧘‍♀️ Wellness Collective", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&q=80"), 
@@ -220,7 +239,15 @@ elif st.session_state.current_page == "🤝 Consumer Clubs":
         with cols[i % 3]:
             st.image(img_url, use_container_width=True)
             st.info(club_name)
-            st.button("Join", key=f"club_{i}")
+            
+            if club_name in st.session_state.joined_clubs:
+                st.button("Joined ✅", disabled=True, key=f"club_{i}", use_container_width=True)
+            else:
+                with st.popover("Join", use_container_width=True):
+                    st.write(f"Join the **{club_name}** to get exclusive invites, early access to drops, and specialized rewards.")
+                    if st.button("Confirm Join", key=f"conf_club_{i}", use_container_width=True):
+                        st.session_state.joined_clubs.append(club_name)
+                        st.rerun()
 
     render_footer()
 
@@ -266,7 +293,6 @@ elif st.session_state.current_page == "⭐ Passport & Rewards":
     st.divider()
     st.subheader("🏆 Reward Catalog")
     
-    # Interactive Rewards Logic
     if not st.session_state.claimed_coffee:
         st.markdown("""
             <div class="reward-gold">
@@ -295,7 +321,6 @@ elif st.session_state.current_page == "⭐ Passport & Rewards":
             st.session_state.claimed_sephora = True
             st.rerun()
             
-    # Always display standard locked rewards
     st.markdown("""
         <div class="reward-locked">
             <h4 style="margin:0; color:#888;">🚢 VIP Yacht Party - Marina</h4>
@@ -308,7 +333,6 @@ elif st.session_state.current_page == "⭐ Passport & Rewards":
         </div>
     """, unsafe_allow_html=True)
 
-    # If any reward is claimed, show a NEW locked reward at the bottom
     if st.session_state.claimed_coffee or st.session_state.claimed_sephora:
         st.markdown("""
             <div class="reward-locked">
@@ -327,13 +351,13 @@ elif st.session_state.current_page == "💬 Testimonials":
     st.write("See what users and brands are saying about BrandDrop.")
     
     reviews = [
-        ("Sarah K.", "Marketing Director", "⭐⭐⭐⭐⭐", "BrandDrop completely changed our product launch strategy. Real engagement over empty clicks."),
-        ("Aisha M.", "Coffee Lover", "⭐⭐⭐⭐⭐", "I've discovered 4 new independent cafes this month just through the app's treasure hunts!"),
-        ("Khalid A.", "Sneakerhead", "⭐⭐⭐⭐", "Got early access to the new Jordan drop. The passport system makes shopping feel like a game."),
-        ("Fatima S.", "University Student", "⭐⭐⭐⭐⭐", "Finally an app that rewards you for attending cool events instead of just giving generic coupons."),
-        ("Omar T.", "Tech Enthusiast", "⭐⭐⭐⭐", "The Vision Pro demo event was incredibly well organized. Points hit my account instantly."),
-        ("Priya R.", "Fashion Influencer", "⭐⭐⭐⭐⭐", "I tell all my followers to use BrandDrop. The VIP access rewards are actually worth it."),
-        ("Dr. Hansel D.", "Business Strategist", "⭐⭐⭐⭐⭐", "A brilliant application of Blue Ocean Strategy in the retail space. Highly disruptive.")
+        ("Sarah K.", "Marketing Director", "🤩 Excellent", "BrandDrop completely changed our product launch strategy. Real engagement over empty clicks."),
+        ("Aisha M.", "Coffee Lover", "🤩 Excellent", "I've discovered 4 new independent cafes this month just through the app's treasure hunts!"),
+        ("Khalid A.", "Sneakerhead", "🙂 Satisfied", "Got early access to the new Jordan drop. The passport system makes shopping feel like a game."),
+        ("Fatima S.", "University Student", "🤩 Excellent", "Finally an app that rewards you for attending cool events instead of just giving generic coupons."),
+        ("Omar T.", "Tech Enthusiast", "🙂 Satisfied", "The Vision Pro demo event was incredibly well organized. Points hit my account instantly."),
+        ("Priya R.", "Fashion Influencer", "🤩 Excellent", "I tell all my followers to use BrandDrop. The VIP access rewards are actually worth it."),
+        ("Dr. Hansel D.", "Business Strategist", "🤩 Excellent", "A brilliant application of Blue Ocean Strategy in the retail space. Highly disruptive.")
     ]
     
     for name, role, stars, text in reviews:
@@ -346,14 +370,65 @@ elif st.session_state.current_page == "💬 Testimonials":
     with st.form("feedback_form"):
         st.text_input("Your Name")
         st.text_input("Your Role (e.g., Coffee Lover, Brand Manager)")
-        st.slider("Rating", 1, 5, 5)
+        st.select_slider("Rating", options=["😞 Regret", "🙁 Bad", "😐 Neutral", "🙂 Satisfied", "🤩 Excellent"], value="🤩 Excellent")
         st.text_area("Your Testimonial")
         st.form_submit_button("Submit Feedback", type="primary")
 
     render_footer()
 
 # ==========================================
-# PAGE 6: ABOUT BRANDDROP
+# PAGE 6: FOR BRANDS
+# ==========================================
+elif st.session_state.current_page == "🏢 For Brands":
+    st.markdown("""
+        <div style="background: linear-gradient(135deg, #1a237e 0%, #26C6DA 100%); padding: 30px; border-radius: 15px; margin-bottom: 20px;">
+            <h1 style="color: white !important; margin:0;">🏢 For Brands</h1>
+            <p style="color: #eee; font-size: 16px;">Launch campaigns and measure real engagement<br>
+            <i>Clear ROI instead of vague advertising metrics</i></p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # KPI Cards
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown('<div class="brand-stat"><div class="stat-icon">👥</div><h2>1,247</h2><p>Total Attendees</p></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="brand-stat"><div class="stat-icon">🚀</div><h2>12</h2><p>Active Campaigns</p></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="brand-stat"><div class="stat-icon">📊</div><h2>87%</h2><p>Avg. Redemption Rate</p></div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="brand-stat"><div class="stat-icon">⭐</div><h2>4.7</h2><p>Avg. Rating</p></div>', unsafe_allow_html=True)
+
+    st.write("### 🚀 Create New Campaign")
+    with st.form("campaign_form", border=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.text_input("Campaign Name", "Summer Launch 2026")
+            st.text_input("Brand Name", "Your Brand")
+            st.selectbox("Category", ["Beauty", "Fashion", "F&B", "Tech", "Auto"])
+            st.text_input("Location", "Dubai Mall")
+        with c2:
+            st.date_input("Start Date")
+            st.date_input("End Date")
+            st.number_input("Capacity", value=50, step=10)
+            st.number_input("Budget (AED)", value=5000, step=500)
+            
+        st.multiselect("Target Audience", ["Beauty Insiders", "Sneakerhead Hub", "Luxury Lounge", "Tech & Gaming", "Foodies Club"], default=["Beauty Insiders"])
+        st.form_submit_button("🚀 Launch Campaign", type="primary")
+
+    st.write("### 📊 Campaign Performance Trends")
+    # Streamlit natively plots dictionaries without needing pandas imported!
+    chart_data = {
+        "Reservations": [45, 67, 89, 102],
+        "Attendees": [38, 55, 72, 85],
+        "Redemptions": [30, 48, 61, 72]
+    }
+    st.line_chart(chart_data)
+
+    render_footer()
+
+# ==========================================
+# PAGE 7: ABOUT BRANDDROP
 # ==========================================
 elif st.session_state.current_page == "📖 About BrandDrop":
     st.markdown("""
@@ -365,14 +440,12 @@ elif st.session_state.current_page == "📖 About BrandDrop":
     """, unsafe_allow_html=True)
     
     c1, c2 = st.columns([1.5, 1])
-    
     with c1:
         st.markdown("""
             <div class="about-card">
                 <h3>🎯 Our Mission</h3>
                 <p>BrandDrop is revolutionizing how brands connect with consumers in the UAE. We're replacing traditional advertising with real-world experiences that create meaningful connections and measurable engagement.</p>
             </div>
-            
             <h3 style="color:#ff5252 !important;">❌ The Problem We Solve</h3>
             <ul style="color:#ddd;">
                 <li>Consumers skip ads and ignore influencer promotions</li>
@@ -380,7 +453,6 @@ elif st.session_state.current_page == "📖 About BrandDrop":
                 <li>Exciting brand experiences are scattered across multiple platforms</li>
                 <li>No single platform exists for discovering brand experiences</li>
             </ul>
-            
             <h3 style="color:#69f0ae !important;">✅ Our Solution</h3>
             <ul style="color:#ddd;">
                 <li>Single platform for discovering, booking, and engaging</li>
@@ -416,7 +488,7 @@ elif st.session_state.current_page == "📖 About BrandDrop":
     render_footer()
 
 # ==========================================
-# PAGE 7: NOTIFICATIONS
+# PAGE 8: NOTIFICATIONS
 # ==========================================
 elif st.session_state.current_page == "🔔 Notifications":
     st.title("🔔 Your Notifications")
